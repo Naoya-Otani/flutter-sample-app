@@ -14,7 +14,17 @@
   6. HomeScreenクラスを定義
       StatefulWigetを継承
       HomeScreenのrouteNameを定義
-
+  7. HomeScreenクラスのbuildメソッドを定義
+      Provider.ofでToDoListModelを取得
+      Scaffold = アプリの骨組み
+      ScaffoldのappBarにAppBarを指定 (ヘッダー？)
+      ScaffoldのbodyにColumnを指定
+      ColumnのchildrenにTextFieldを指定 (Todoを入力するテキストボックス)
+      ColumnのchildrenにElevatedButtonを指定 (チェックボックス)
+      ColumnのchildrenにExpandedを指定 (Todoリスト)
+  8. TodoListクラスを定義
+      StatelessWidgetを継承 (なぜstatelessなのかよくわかっていない)
+      Viewを返す
 */
 
 import 'package:flutter/material.dart';
