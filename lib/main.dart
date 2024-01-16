@@ -1,3 +1,22 @@
+/*
+  やったことメモ
+  1. pubspec.yaml(npmでいうpackage.json)にproviderを追加 
+  2. 必要なパッケージをインポート
+  3. main関数を定義
+      runApp関数でAppクラスを実行
+  4. Appクラスを定義
+      const App({Key? key}) : super(key: key); がよくわかっていない
+  5. Appクラスのbuildメソッドを定義
+      MultiProviderでChangeNotifierProviderをラップ
+      ChangeNotifierProviderのcreateでToDoListModelを生成
+      MaterialAppを返す
+      MaterialAppのhomeにHomeScreenを指定
+  6. HomeScreenクラスを定義
+      StatefulWigetを継承
+      HomeScreenのrouteNameを定義
+
+*/
+
 import 'package:flutter/material.dart';
 import 'package:sample_app/todo.dart';
 import 'package:provider/provider.dart';
@@ -9,79 +28,91 @@ void main() {
 class App extends StatelessWidget {
   const App({Key? key}) : super(key: key);
 
-  // stateLessWidget または stateFulWidgetを継承した場合は必ずbuildメソッドをオーバーライドしないといけない。
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: HomeScreen(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ToDoListModel()),
+      ],
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'Todo App',
+        theme: ThemeData(
+          primarySwatch: Colors.blue,
+        ),
+        home: const HomeScreen(),
+      ),
     );
   }
 }
 
-// 途中で値が変わったらそれを反映させる必要があるのでStatefulWidgetを記載する
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
 
-// StatefulWidgetはWidgetにstateの概念をいれて拡張したもの
-// StatefulWidgetはcreateStateメソッドを持ち、これがStateクラスを返す
+  static const String routeName = '/';
+
   @override
-  ////stateを継承している型
-  _HomeScreenState createState() => _HomeScreenState();
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // 初めに3つTODOリストを作成
-  final _todos = List.generate(
-    5,
-    (index) => ToDo(),
-  );
+  final TextEditingController _todoController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
-    // scaffold:足場
-    return Scaffold(
-        appBar: AppBar(
-          title: const Text('ToDo Sample App'),
-          backgroundColor: const Color(0xFF388E3C),
-        ),
-        // ListView.builder()は基本的なリストを作成する
-        body: ListView.builder(
-          //生成する個数を指定する
-          itemCount: _todos.length,
+    final todoListModel = Provider.of<ToDoListModel>(context);
 
-          // ↓itemBuilderの関数型の定義 Widget型を返す 引数にはこれら↓
-          // IndexedWidgetBuilder = Widget Function(BuildContext context, int index);
-          // CheckboxListTileについて 公式 https://api.flutter.dev/flutter/material/CheckboxListTile-class.html
-          itemBuilder: (BuildContext context, int index) {
-            return ListTile(
-              leading: Checkbox(
-                value: _todos[index].checked,
-                onChanged: (e) {
-                  setState(() {
-                    _todos[index].checked = e; //イベントeを受け取り反映 true, false
-                  });
-                },
-              ),
-              title: TextFormField(
-                style: _todos[index].checked == true
-                    ? const TextStyle(
-                        decoration: TextDecoration.lineThrough) // 取り消し線
-                    : const TextStyle(color: Colors.black), // falseの時はただの黒色
-              ),
-            );
-          },
-        ),
-        floatingActionButton: FloatingActionButton(
-          child: const Icon(Icons.add),
-          backgroundColor: const Color(0xFF388E3C),
-          onPressed: () {
-            // setState()を呼び出すことで裏では再度buildメソッドを呼び出して変更された変数で再描画している
-            setState(() {
-              _todos.add(
-                ToDo(),
-              );
-            });
-          },
-        ));
+    return Scaffold(
+      appBar: AppBar(title: const Text('Todo Sample')),
+      body: Column(
+        children: [
+          TextField(
+            controller: _todoController,
+            decoration: const InputDecoration(
+              hintText: 'タスクを入力してください',
+              contentPadding: EdgeInsets.all(20),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              todoListModel.addToDo(ToDo(
+                _todoController.text,
+              ));
+              _todoController.clear();
+            },
+            child:
+                Container(alignment: Alignment.center, child: const Text('追加')),
+          ),
+          Expanded(
+            child: TodoList(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class TodoList extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final todoListModel = Provider.of<ToDoListModel>(context);
+
+    return ListView(
+      children: todoListModel.todoList.map((todo) {
+        return ListTile(
+          title: Text(todo.title,
+              style: const TextStyle(fontSize: 18),
+              textAlign: TextAlign.left,
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1),
+          trailing: Checkbox(
+            value: todo.checked,
+            onChanged: (bool? value) {
+              todoListModel.markAsDone(todo);
+            },
+          ),
+        );
+      }).toList(),
+    );
   }
 }
