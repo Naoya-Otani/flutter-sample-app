@@ -20,31 +20,33 @@
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:sample_app/models/todo.dart';
 
-class ToDo {
-  String title;
-  bool? checked;
+// class ToDo {
+//   String title;
+//   bool? checked;
 
-  ToDo([this.title = "", this.checked = false]);
-}
+//   ToDo([this.title = "", this.checked = false]);
+// }
 
 class ToDoListModel extends ChangeNotifier {
   final List<ToDo> _todoList = [];
 
   List<ToDo> get todoList => _todoList;
 
-  void addToDo(ToDo todo) {
-    _todoList.add(todo);
+  void addToDo(String title) {
+    _todoList.add(
+      ToDo(
+        title: title,
+        checked: false,
+      ),
+    );
     notifyListeners();
   }
 
-  void markAsDone(ToDo todo) {
-    todo.checked = true;
+  void deleteToDo(ToDo todo) {
+    _todoList.remove(todo);
     notifyListeners();
-    Future.delayed(Duration(milliseconds: 500), () {
-      _todoList.remove(todo);
-      notifyListeners();
-    });
   }
 }
 
@@ -60,7 +62,7 @@ class TodoList extends StatelessWidget {
           trailing: Checkbox(
             value: todo.checked,
             onChanged: (value) {
-              todoListModel.markAsDone(todo);
+              todoListModel.deleteToDo(todo);
             },
           ),
         );

@@ -27,6 +27,22 @@
       Viewを返す
 */
 
+/*
+  Todo
+  ・textEditingControllerと普通のStringで初期化の違い (document調べる)
+    -> 普通のStringでは変更が検知されないから。
+      controllerをTextFieldに渡すことで、TextFieldの変更を検知できるようになる。
+
+      Flutter docs
+      https://api.flutter.dev/flutter/widgets/TextEditingController-class.html
+
+      <input>のvalueに値を渡すのと同じ?
+
+  ・freezedを使って実装する
+  
+  ・branch切ってproviderなしでtodoリストを実装してみる
+*/
+
 import 'package:flutter/material.dart';
 import 'package:sample_app/todo.dart';
 import 'package:provider/provider.dart';
@@ -85,44 +101,34 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           ElevatedButton(
             onPressed: () {
-              todoListModel.addToDo(ToDo(
+              todoListModel.addToDo(
                 _todoController.text,
-              ));
+              );
               _todoController.clear();
             },
             child:
                 Container(alignment: Alignment.center, child: const Text('追加')),
           ),
           Expanded(
-            child: TodoList(),
-          ),
+              child: ListView(
+            children: todoListModel.todoList.map((todo) {
+              return ListTile(
+                title: Text(todo.title,
+                    style: const TextStyle(fontSize: 18),
+                    textAlign: TextAlign.left,
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1),
+                trailing: Checkbox(
+                  value: todo.checked,
+                  onChanged: (bool? value) {
+                    todoListModel.deleteToDo(todo);
+                  },
+                ),
+              );
+            }).toList(),
+          )),
         ],
       ),
-    );
-  }
-}
-
-class TodoList extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final todoListModel = Provider.of<ToDoListModel>(context);
-
-    return ListView(
-      children: todoListModel.todoList.map((todo) {
-        return ListTile(
-          title: Text(todo.title,
-              style: const TextStyle(fontSize: 18),
-              textAlign: TextAlign.left,
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1),
-          trailing: Checkbox(
-            value: todo.checked,
-            onChanged: (bool? value) {
-              todoListModel.markAsDone(todo);
-            },
-          ),
-        );
-      }).toList(),
     );
   }
 }
