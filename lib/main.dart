@@ -41,14 +41,23 @@
   ・freezedを使って実装する
   
   ・branch切ってproviderなしでtodoリストを実装してみる
+  -> StatefullWidgetで実装
 */
 
 import 'package:flutter/material.dart';
-import 'package:sample_app/todo.dart';
-import 'package:provider/provider.dart';
 
 void main() {
   runApp(const App());
+}
+
+class ToDo {
+  final String title;
+  bool checked;
+
+  ToDo({
+    required this.title,
+    this.checked = false,
+  });
 }
 
 class App extends StatelessWidget {
@@ -56,18 +65,13 @@ class App extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => ToDoListModel()),
-      ],
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'Todo App',
-        theme: ThemeData(
-          primarySwatch: Colors.blue,
-        ),
-        home: const HomeScreen(),
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Todo App',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
       ),
+      home: const HomeScreen(),
     );
   }
 }
@@ -83,13 +87,12 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _todoController = TextEditingController();
+  List<ToDo> _todoList = [];
 
   @override
   Widget build(BuildContext context) {
-    final todoListModel = Provider.of<ToDoListModel>(context);
-
     return Scaffold(
-      appBar: AppBar(title: const Text('Todo Sample')),
+      appBar: AppBar(title: const Text('Todo Sample without provider')),
       body: Column(
         children: [
           TextField(
@@ -101,34 +104,88 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           ElevatedButton(
             onPressed: () {
-              todoListModel.addToDo(
-                _todoController.text,
-              );
-              _todoController.clear();
+              _addTodo();
             },
             child:
                 Container(alignment: Alignment.center, child: const Text('追加')),
           ),
           Expanded(
-              child: ListView(
-            children: todoListModel.todoList.map((todo) {
-              return ListTile(
-                title: Text(todo.title,
-                    style: const TextStyle(fontSize: 18),
+            child: ListView(
+              children: _todoList.map((todo) {
+                return ListTile(
+                  title: Text(
+                    todo.title,
+                    style: todo.checked
+                        ? const TextStyle(
+                            fontSize: 18,
+                            decoration: TextDecoration.lineThrough)
+                        : const TextStyle(fontSize: 18),
                     textAlign: TextAlign.left,
                     overflow: TextOverflow.ellipsis,
-                    maxLines: 1),
-                trailing: Checkbox(
-                  value: todo.checked,
-                  onChanged: (bool? value) {
-                    todoListModel.deleteToDo(todo);
-                  },
-                ),
-              );
-            }).toList(),
-          )),
+                    maxLines: 1,
+                  ),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Checkbox(
+                        value: todo.checked,
+                        onChanged: (bool? value) {
+                          _toggleTodoStatus(todo);
+                        },
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.delete),
+                        onPressed: () {
+                          _deleteTodo(todo);
+                        },
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
         ],
       ),
     );
+  }
+
+  void _addTodo() {
+    if (_todoController.text.isEmpty) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('注意'),
+            content: const Text('タスクを入力してください。'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text('閉じる'),
+              ),
+            ],
+          );
+        },
+      );
+      return;
+    }
+    setState(() {
+      _todoList.add(ToDo(title: _todoController.text));
+      _todoController.clear();
+    });
+  }
+
+  void _deleteTodo(ToDo todo) {
+    setState(() {
+      _todoList.remove(todo);
+    });
+  }
+
+  void _toggleTodoStatus(ToDo todo) {
+    setState(() {
+      todo.checked = !todo.checked;
+    });
   }
 }
