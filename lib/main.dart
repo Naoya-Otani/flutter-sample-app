@@ -44,8 +44,9 @@
 */
 
 import 'package:flutter/material.dart';
-import 'package:sample_app/todo.dart';
 import 'package:provider/provider.dart';
+
+import 'todo.dart';
 
 void main() {
   runApp(const App());
@@ -56,32 +57,23 @@ class App extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => ToDoListModel()),
-      ],
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'Todo App',
-        theme: ThemeData(
-          primarySwatch: Colors.blue,
-        ),
-        home: const HomeScreen(),
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Todo App',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: ChangeNotifierProvider(
+        create: (_) => ToDoListModel(),
+        child: HomeScreen(),
       ),
     );
   }
 }
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+class HomeScreen extends StatelessWidget {
+  HomeScreen({super.key});
 
-  static const String routeName = '/';
-
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _todoController = TextEditingController();
 
   @override
@@ -106,27 +98,32 @@ class _HomeScreenState extends State<HomeScreen> {
               );
               _todoController.clear();
             },
-            child:
-                Container(alignment: Alignment.center, child: const Text('追加')),
+            child: Container(
+              alignment: Alignment.center,
+              child: const Text('追加'),
+            ),
           ),
           Expanded(
-              child: ListView(
-            children: todoListModel.todoList.map((todo) {
-              return ListTile(
-                title: Text(todo.title,
+            child: ListView(
+              children: todoListModel.todoList.map((todo) {
+                return ListTile(
+                  title: Text(
+                    todo.title,
                     style: const TextStyle(fontSize: 18),
                     textAlign: TextAlign.left,
                     overflow: TextOverflow.ellipsis,
-                    maxLines: 1),
-                trailing: Checkbox(
-                  value: todo.checked,
-                  onChanged: (bool? value) {
-                    todoListModel.deleteToDo(todo);
-                  },
-                ),
-              );
-            }).toList(),
-          )),
+                    maxLines: 1,
+                  ),
+                  trailing: Checkbox(
+                    value: todo.checked,
+                    onChanged: (bool? value) {
+                      todoListModel.deleteToDo(todo);
+                    },
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
         ],
       ),
     );

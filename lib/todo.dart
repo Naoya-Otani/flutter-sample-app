@@ -19,8 +19,8 @@
 */
 
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:sample_app/models/todo.dart';
+
+import 'models/todo.dart';
 
 // class ToDo {
 //   String title;
@@ -47,26 +47,5 @@ class ToDoListModel extends ChangeNotifier {
   void deleteToDo(ToDo todo) {
     _todoList.remove(todo);
     notifyListeners();
-  }
-}
-
-class TodoList extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final todoListModel = Provider.of<ToDoListModel>(context);
-
-    return ListView(
-      children: todoListModel.todoList.map((todo) {
-        return ListTile(
-          title: Text(todo.title),
-          trailing: Checkbox(
-            value: todo.checked,
-            onChanged: (value) {
-              todoListModel.deleteToDo(todo);
-            },
-          ),
-        );
-      }).toList(),
-    );
   }
 }
