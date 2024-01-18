@@ -44,8 +44,10 @@
 */
 
 import 'package:flutter/material.dart';
-import 'package:sample_app/todo.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import 'models/todo.dart';
+import 'todo_bloc.dart';
 
 void main() {
   runApp(const App());
@@ -56,38 +58,27 @@ class App extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => ToDoListModel()),
-      ],
+    return BlocProvider(
+      create: (_) => ToDoListBloc(),
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'Todo App',
         theme: ThemeData(
           primarySwatch: Colors.blue,
         ),
-        home: const HomeScreen(),
+        home: HomeScreen(),
       ),
     );
   }
 }
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+class HomeScreen extends StatelessWidget {
+  HomeScreen({super.key});
 
-  static const String routeName = '/';
-
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _todoController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
-    final todoListModel = Provider.of<ToDoListModel>(context);
-
     return Scaffold(
       appBar: AppBar(title: const Text('Todo Sample')),
       body: Column(
@@ -101,34 +92,57 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           ElevatedButton(
             onPressed: () {
-              todoListModel.addToDo(
-                _todoController.text,
-              );
+              context
+                  .read<ToDoListBloc>()
+                  .add(ToDoListAddEvent(_todoController.text));
               _todoController.clear();
             },
-            child:
-                Container(alignment: Alignment.center, child: const Text('追加')),
+            child: Container(
+              alignment: Alignment.center,
+              child: const Text('追加'),
+            ),
           ),
-          Expanded(
-              child: ListView(
-            children: todoListModel.todoList.map((todo) {
-              return ListTile(
-                title: Text(todo.title,
-                    style: const TextStyle(fontSize: 18),
-                    textAlign: TextAlign.left,
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1),
-                trailing: Checkbox(
-                  value: todo.checked,
-                  onChanged: (bool? value) {
-                    todoListModel.deleteToDo(todo);
-                  },
-                ),
-              );
-            }).toList(),
-          )),
+          const _ToDoListView(),
         ],
       ),
     );
+  }
+}
+
+class _ToDoListView extends StatelessWidget {
+  const _ToDoListView();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<ToDoListBloc, ToDoList>(
+      builder: (context, state) {
+        return Expanded(
+          child: ListView(
+            children: _createList(context, state.toDoList),
+          ),
+        );
+      },
+    );
+  }
+
+  List<Widget> _createList(BuildContext context, List<ToDo> list) {
+    final resultList = <Widget>[];
+    list.asMap().forEach((index, toDo) {
+      resultList.add(ListTile(
+        title: Text(
+          '${index + 1}: ${toDo.title}',
+          style: const TextStyle(fontSize: 18),
+          textAlign: TextAlign.left,
+          overflow: TextOverflow.ellipsis,
+          maxLines: 1,
+        ),
+        trailing: Checkbox(
+          value: toDo.checked,
+          onChanged: (_) =>
+              context.read<ToDoListBloc>().add(ToDoListCheckEvent(index)),
+        ),
+      ));
+    });
+    return resultList;
   }
 }
